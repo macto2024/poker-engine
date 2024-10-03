@@ -3,27 +3,27 @@ from hand import Card
 
 class HandEvaluator:
     
-    HIGHCARD      = 1
-    ONEPAIR       = 2
-    TWOPAIR       = 3
-    THREECARD     = 4
-    STRAIGHT      = 5
-    FLUSH         = 6
-    FULLHOUSE     = 7
-    FOURCARD      = 8
-    STRAIGHTFLASH = 9
+    # HIGHCARD      = 1
+    # ONEPAIR       = 2
+    # TWOPAIR       = 3
+    # THREECARD     = 4
+    # STRAIGHT      = 5
+    # FLUSH         = 6
+    # FULLHOUSE     = 7
+    # FOURCARD      = 8
+    # STRAIGHTFLASH = 9
 
-    HAND_STRENGTH_MAP = {
-        HIGHCARD: "HIGHCARD",
-        ONEPAIR: "ONEPAIR",
-        TWOPAIR: "TWOPAIR",
-        THREECARD: "THREECARD",
-        STRAIGHT: "STRAIGHT",
-        FLUSH: "FLUSH",
-        FULLHOUSE: "FULLHOUSE",
-        FOURCARD: "FOURCARD",
-        STRAIGHTFLASH: "STRAIGHTFLASH"
-    }
+    # HAND_STRENGTH_MAP = {
+    #     HIGHCARD: "HIGHCARD",
+    #     ONEPAIR: "ONEPAIR",
+    #     TWOPAIR: "TWOPAIR",
+    #     THREECARD: "THREECARD",
+    #     STRAIGHT: "STRAIGHT",
+    #     FLUSH: "FLUSH",
+    #     FULLHOUSE: "FULLHOUSE",
+    #     FOURCARD: "FOURCARD",
+    #     STRAIGHTFLASH: "STRAIGHTFLASH"
+    # }
     
     @classmethod
     def evaluate_best_hand(cls, cards):
@@ -36,7 +36,8 @@ class HandEvaluator:
 
         # Step 1: Check for Straight Flush
         flush_cards = cls.get_flush_cards(cards, suits)
-        if flush_cards is not None and cls.is_straight(flush_cards):
+        straight = cls.get_straight(cards)
+        if flush_cards is not None and straight is not None:
             best_straight = flush_cards[:5]
             
             # Check for Royal Flush
@@ -60,7 +61,6 @@ class HandEvaluator:
             return flush_cards[:5], "FLUSH"
 
         # Step 5: Check for Straight
-        straight = cls.get_straight(cards)
         if straight is not None:
             return straight, "STRAIGHT"
 
@@ -91,24 +91,6 @@ class HandEvaluator:
             return None
         flush_cards = [card for card in cards if card.suit == flush_suit[0]]
         return sorted(flush_cards, key=lambda x: x.rank, reverse=True)
-
-    @classmethod
-    def is_straight(cls, cards):
-        """Check for a straight and return True or False."""
-        ranks = np.array([card.rank for card in cards])
-        unique_ranks = np.unique(ranks)
-        sorted_ranks = np.sort(unique_ranks)
-
-        # Check for a regular straight (e.g., 6-7-8-9-10)
-        for i in range(len(sorted_ranks) - 4):
-            if sorted_ranks[i + 4] - sorted_ranks[i] == 4:
-                return True
-
-        # Check for Ace-low straight (A-2-3-4-5)
-        if set([14, 2, 3, 4, 5]).issubset(unique_ranks):
-            return True
-
-        return False
 
 
     @classmethod
@@ -247,3 +229,6 @@ class HandRankEncoder:
         encoded_hand = f"{rank_code:X}{hex_ranks}"
 
         return encoded_hand
+
+class HandRankDecoder:
+    ...
