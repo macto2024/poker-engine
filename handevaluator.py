@@ -152,8 +152,13 @@ class HandEvaluator:
         rank, counts = rank_count
         pairs = rank[counts == 2]
         if len(pairs) >= 2:
+            # Sort the two pairs in decreasing order of rank
             top_two_pairs = sorted(pairs, reverse=True)[:2]
+            # Collect the two pairs from the cards
             two_pair = [card for card in cards if card.rank in top_two_pairs]
+             # Sort the cards in each pair by rank to ensure order consistency
+            two_pair = sorted(two_pair, key=lambda card: (card.rank, card.suit), reverse=True)
+            # Add the kicker (highest remaining card)
             kicker = cls.get_high_card([card for card in cards if card.rank not in top_two_pairs])
             return two_pair + kicker[:1]
         return None
@@ -188,7 +193,7 @@ class HandRankEncoder:
         "FULLHOUSE": 7,
         "FOURCARD": 8,
         "STRAIGHTFLUSH": 9,
-        "ROYALFLUCH" : 10
+        "ROYALFLUCH" : 0
     }
 
     CARD_RANKS = {
@@ -231,4 +236,49 @@ class HandRankEncoder:
         return encoded_hand
 
 class HandRankDecoder:
-    ...
+    RANK_CODES = {
+        1: "HIGHCARD",
+        2: "ONEPAIR",
+        3: "TWOPAIR",
+        4: "THREECARD",
+        5: "STRAIGHT",
+        6: "FLUSH",
+        7: "FULLHOUSE",
+        8: "FOURCARD",
+        9: "STRAIGHTFLUSH",
+        0: "ROYALFLUSH"
+    }
+
+    CARD_RANKS = {
+        '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
+        'A': 10, 'B': 11, 'C': 12, 'D': 13, 'E': 14
+    }
+
+    @classmethod
+    def decode_hand(cls, encoded_hand):
+        """
+        Decode a 6-digit hexadecimal hand rank representation into the hand type and card ranks.
+
+        Parameters:
+        encoded_hand (str): 6-digit hex code representing the hand rank and cards.
+
+        Returns:
+        tuple: (hand_type, ranks), where:
+            - hand_type is a string representing the type of hand (e.g., "TWOPAIR", "FULLHOUSE").
+            - ranks is a list of integers representing the card ranks in descending order.
+        """
+        # Step 1: Extract the hand rank code and card rank hex digits
+        hand_rank_code = int(encoded_hand[0], 16)  # First digit is the rank code
+        hex_ranks = encoded_hand[1:]  # Remaining 5 digits represent the card ranks
+
+        # Step 2: Decode the hand type using the hand rank code
+        hand_type = cls.RANK_CODES.get(hand_rank_code, "UNKNOWN")
+
+        # Step 3: Decode the card ranks from the hex digits
+        ranks = [cls.CARD_RANKS[hex_digit] for hex_digit in hex_ranks]
+
+        # Step 4: Handle Ace-low straight (A-2-3-4-5)
+        if hand_type == "STRAIGHT" and set(ranks) == {5, 4, 3, 2, 14}:
+            ranks = [5, 4, 3, 2, 1]  # Treat Ace as 1
+
+        return hand_type, ranks
